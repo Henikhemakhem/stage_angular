@@ -46,6 +46,7 @@ export class FormcoursComponent {
     this.form = this.fb.group({
       nom: ['', Validators.required],
       explication: ['', Validators.required],
+      pdf: ['', Validators.required],
       videos: [null],
       videoUrl: [''],
       formationId: [this.formationId, Validators.required]
@@ -94,7 +95,7 @@ export class FormcoursComponent {
       formData.append('formationId', this.form.get('formationId')?.value);
       formData.append('nom', this.form.get('nom')?.value);
       formData.append('explication', this.form.get('explication')?.value);
-
+      formData.append('pdf', this.form.get('pdf')?.value);
       // Add each video file to FormData
       this.selectedFiles.forEach(file => {
         formData.append('videos', file);

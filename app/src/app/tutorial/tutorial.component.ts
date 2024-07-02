@@ -13,7 +13,11 @@ export class TutorialComponent implements OnInit {
   formationId!: string;
   courses: any[] = [];
   titleform!: string;
+pdf!:boolean;
+formation:any[]=[];
 
+filteredcourse: any[] = [];
+  searchTerm: string = '';
   constructor(
     private route: ActivatedRoute,
     private courseService: CourseServiceService,
@@ -27,14 +31,30 @@ export class TutorialComponent implements OnInit {
     this.formservice.getFormationbyId(this.formationId).subscribe((x) => {
       this.titleform = x.category;
     });
+
+    this.getformationF();
+    console.log(this.formation)
+  }
+
+  search(): void {
+    if (this.searchTerm) {
+      // Filtrer les formations en fonction du terme de recherche
+      this.filteredcourse = this.courses.filter(courses =>
+        courses.nom.toLowerCase().includes(this.searchTerm.toLowerCase())
+      );
+    } else {
+      this.filteredcourse = this.courses; // Afficher toutes les formations si le terme de recherche est vide
+    }
   }
 
   loadCourses(): void {
     this.courseService.getCoursesByFormationId(this.formationId).subscribe(
       (data: any[]) => {
+        this.filteredcourse = data; 
         this.courses = data.map(course => ({
           ...course,
           showVideos: false,
+         showpdf:false,
           videos: course.videos.map((video: any) => ({
             ...video,
             safeUrl: this.getSafeVideoUrl(video.url)
@@ -46,13 +66,27 @@ export class TutorialComponent implements OnInit {
       }
     );
   }
-
+  getformationF(): void {
+    this.formservice.getFormations().subscribe((data) => {
+      this.formation = data.filter((formation) => formation._id !== this.formationId);
+      console.log(this.formation);  // Déplacez le log ici pour voir les données après filtrage
+    });
+  }
   showVideos(course: any): void {
     course.showVideos = true; // Affiche les vidéos
   }
 
   hideVideos(course: any): void {
     course.showVideos = false; // Masque les vidéos
+  }
+
+
+  showpdf(course: any): void {
+    course.showpdf = true; // Affiche les vidéos
+  }
+
+  hidepdf(course: any): void {
+    course.showpdf = false; // Masque les vidéos
   }
 
   getSafeVideoUrl(url: string): SafeResourceUrl {
@@ -79,6 +113,7 @@ export class TutorialComponent implements OnInit {
     this.courseService.deleteCourse(id).subscribe(
       () => {
         this.courses = this.courses.filter(course => course._id !== id);
+        this.ngOnInit()
         console.log(`Course with id ${id} deleted successfully.`);
       },
       (error) => {

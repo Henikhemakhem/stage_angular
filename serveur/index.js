@@ -6,7 +6,9 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const path = require('path');
 const cloudinary = require(path.resolve(__dirname, './config/cloudinary'));
 const Formation = require('./Models/Formation');
+const User = require('./Models/User'); 
 const Course = require('./Models/Course'); // Importer le modèle Course
+const Admin = require('./Models/Admin'); // Importer le modèle Course
 
 mongoose.connect("mongodb://127.0.0.1:27017/stage");
 
@@ -118,7 +120,7 @@ const uploadVideos = multer({ storage: storageVideos });
 
 // Route pour créer une nouvelle course avec upload de vidéos et URLs de vidéos
 app.post("/createcourse", uploadVideos.array('videos', 10), async (req, res) => {
-  const { formationId, nom, explication, videoUrls } = req.body;
+  const { formationId, nom, explication, videoUrls ,pdf} = req.body;
 
   // Vérifiez si des fichiers vidéos ou des URLs sont bien présents
   if ((!req.files || req.files.length === 0) && (!videoUrls || videoUrls.length === 0)) {
@@ -147,6 +149,7 @@ app.post("/createcourse", uploadVideos.array('videos', 10), async (req, res) => 
       nom,
       videos,
       explication,
+      pdf,
     });
 
     const savedCourse = await newCourse.save();
@@ -160,7 +163,7 @@ app.post("/createcourse", uploadVideos.array('videos', 10), async (req, res) => 
 // Route pour mettre à jour une course par ID
 app.put("/updatecourse/:id", uploadVideos.array('videos', 10), async (req, res) => {
   const id = req.params.id;
-  const { formationId, nom, explication } = req.body;
+  const { formationId, nom, explication ,pdf} = req.body;
 
   // Si des fichiers sont uploadés, map les fichiers pour extraire l'URL et l'ID public de Cloudinary
   const videos = req.files.map(file => ({
@@ -171,7 +174,7 @@ app.put("/updatecourse/:id", uploadVideos.array('videos', 10), async (req, res) 
   try {
     const updatedCourse = await Course.findByIdAndUpdate(
       id,
-      { formation: formationId, nom, videos, explication },
+      { formation: formationId, nom, videos, explication,pdf },
       { new: true }
     );
     if (!updatedCourse) {
@@ -213,7 +216,109 @@ app.get("/formation/:formationId/courses", (req, res) => {
 
 
 
+// User registration route
+app.post('/register', async (req, res) => {
+  try {
+    const { nom, email, password } = req.body;
 
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const newUser = new User({
+      nom,
+      email,
+      password // Store password as plaintext (not recommended)
+    });
+
+    await newUser.save();
+    res.status(201).send({ message: 'User registered successfully!' });
+  } catch (error) {
+    console.error('Error during registration:', error);
+    res.status(500).send({ message: 'Error during registration' });
+  }
+});
+app.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email, password });
+
+    // Compare plaintext passwords
+    if (user) {
+      res.status(200).json({ message: 'Connexion réussie'});
+    } else {
+        // Sinon, renvoyer une réponse indiquant des identifiants incorrects
+        res.status(401).json({ message: 'Identifiants incorrects' });
+    }
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).send({ message: 'Error during login' });
+  }
+});
+
+
+//admin
+// Créer un nouvel administrateur
+app.post("/createadmin", async (req, res) => {
+  try {
+    const { login, password } = req.body;
+    const newAdmin = new Admin({ login, password });
+    await newAdmin.save();
+    res.status(201).json({ message: 'Admin created successfully', admin: newAdmin });
+  } catch (error) {
+    res.status(500).json({ message: 'Could not create admin', error: error.message });
+  }
+});
+
+// Obtenir tous les administrateurs
+app.get("/admins", async (req, res) => {
+  try {
+    const admins = await Admin.find();
+    res.status(200).json(admins);
+  } catch (error) {
+    res.status(500).json({ message: 'Could not fetch admins', error: error.message });
+  }
+});
+
+// Obtenir un administrateur par son ID
+app.get("/admins/:id", async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.params.id);
+    if (!admin) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+    res.status(200).json(admin);
+  } catch (error) {
+    res.status(500).json({ message: 'Could not fetch admin', error: error.message });
+  }
+});
+
+// Mettre à jour un administrateur
+app.put("/admins/:id", async (req, res) => {
+  try {
+    const updatedAdmin = await Admin.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updatedAdmin) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+    res.status(200).json({ message: 'Admin updated successfully', admin: updatedAdmin });
+  } catch (error) {
+    res.status(500).json({ message: 'Could not update admin', error: error.message });
+  }
+});
+
+// Supprimer un administrateur
+app.delete("/admins/:id", async (req, res) => {
+  try {
+    const deletedAdmin = await Admin.findByIdAndDelete(req.params.id);
+    if (!deletedAdmin) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+    res.status(200).json({ message: 'Admin deleted successfully', admin: deletedAdmin });
+  } catch (error) {
+    res.status(500).json({ message: 'Could not delete admin', error: error.message });
+  }
+});
 
 
 

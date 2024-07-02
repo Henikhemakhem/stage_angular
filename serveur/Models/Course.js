@@ -8,6 +8,7 @@
     nom: {  type: String, required: true  },
     videos: [{ url: String, public_id: String }], // Liste de vidéos hébergées sur Cloudinary
     explication: { type: String, required: true },
+    pdf: {  type: String, required: true  },
   });
 
   // Créer le modèle Course basé sur le schéma

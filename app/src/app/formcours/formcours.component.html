@@ -24,6 +24,10 @@
             <textarea id="explication" formControlName="explication" class="form-control" required></textarea>
           </div>
           <div class="form-group">
+            <label for="pdf">pdf_url:</label>
+            <input type="text" id="pdf" formControlName="pdf" class="form-control" required>
+          </div>
+          <div class="form-group">
             <label for="videos">Vidéos:</label>
             <input type="file" id="videos" (change)="onFilesSelected($event)" multiple formControlName="videos" class="form-control-file">
             <p *ngIf="invalidFileType" class="text-danger">Les fichiers doivent être au format MP4.</p>
